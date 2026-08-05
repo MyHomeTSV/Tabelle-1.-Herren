@@ -17,8 +17,9 @@
       overflow-anchor: none;
     }
     :root {
-      --crop-top: 140px;
-      --zoom: 1.6;   /* EINSTELLBAR: Größe der Tabelle. 1.0 = normale Größe, 1.6 = 60% größer usw. */
+      --crop-top: 0px;
+      --static-crop-top: 1000px;  /* EINSTELLBAR: fester Bereich (px) oben, der IMMER abgeschnitten bleibt, z. B. 100px */
+      --zoom: 1.6;              /* EINSTELLBAR: Größe der Tabelle. 1.0 = normal, 1.6 = 60% größer usw. */
     }
     #viewport {
       width: 100vw;
@@ -28,7 +29,7 @@
     }
     #shifter {
       position: absolute;
-      top: calc(-1 * var(--crop-top));
+      top: calc(-1 * (var(--static-crop-top) + var(--crop-top)));
       left: 0;
       width: 100%;
     }
@@ -64,12 +65,12 @@
   (function () {
     // ==== EINSTELLBARE WERTE FÜR DEN SCROLL-TICKER ====
     var initialDelay   = 4000;  // EINSTELLBAR: Wartezeit (ms) bis zum ERSTEN Scrollen nach dem Laden der Seite
-    var scrollDuration = 15000; // EINSTELLBAR: Dauer (ms) für den kompletten Weg von ganz oben bis ganz unten
+    var scrollDuration = 15000; // EINSTELLBAR: Dauer (ms) für den kompletten Weg von oben bis unten
     var pauseAtBottom  = 2000;  // EINSTELLBAR: Wartezeit (ms) unten, bevor es zurück nach oben springt
     var pauseAtTop     = 3000;  // EINSTELLBAR: Wartezeit (ms) oben, bevor der nächste Durchlauf startet
     // ===================================================
 
-    var generation = 0; // wird bei jedem Neustart erhöht, um alte Animationsschleifen zu stoppen
+    var generation = 0;
 
     function setCrop(px) {
       document.documentElement.style.setProperty("--crop-top", px + "px");
@@ -77,14 +78,17 @@
 
     function currentMaxCrop() {
       var shifter = document.getElementById("shifter");
-      var maxCrop = shifter.scrollHeight - window.innerHeight;
+      var staticCropTop = parseFloat(
+        getComputedStyle(document.documentElement).getPropertyValue("--static-crop-top")
+      ) || 0;
+      var maxCrop = shifter.scrollHeight - window.innerHeight - staticCropTop;
       return maxCrop < 0 ? 0 : maxCrop;
     }
 
     function animate(myGen, duration, onDone) {
       var startTime = null;
       function step(timestamp) {
-        if (myGen !== generation) { return; } // Abbruch, falls inzwischen neu gestartet wurde
+        if (myGen !== generation) { return; }
         if (!startTime) startTime = timestamp;
         var elapsed = timestamp - startTime;
         var progress = Math.min(elapsed / duration, 1);
@@ -111,17 +115,15 @@
     }
 
     function startFresh() {
-      generation++; // macht jede evtl. noch laufende alte Animation ungültig
+      generation++;
       var myGen = generation;
       forceTop();
       setCrop(0);
       setTimeout(function () { cycle(myGen); }, initialDelay);
     }
 
-    // Beim ersten Laden der Seite starten
     startFresh();
 
-    // Immer neu von oben starten, wenn die Seite (wieder) sichtbar wird
     document.addEventListener("visibilitychange", function () {
       if (document.visibilityState === "visible") {
         startFresh();
