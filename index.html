@@ -31,7 +31,8 @@
       top: calc(-1 * var(--crop-top));
       left: 0;
       width: 100%;
-      transition: top 1s ease-in-out;
+      /* transition: top 1s ease-in-out;  <- diese Zeile entfernen/auskommentieren */
+    }
     }
     .fussballde_widget {
       width: 100% !important;
@@ -64,35 +65,45 @@
   forceTop();
 
   (function () {
-    var initialDelay = 3000; // Wartezeit bis zum ERSTEN Scrollen (ms) → 3 Sekunden
-    var step = 250;          // Pixel pro Schritt
-    var stepPause = 4000;    // Wartezeit zwischen den weiteren Schritten (ms)
-    var topPause = 8000;     // Wartezeit oben, bevor der Zyklus neu startet (ms)
-    var current = 0;
+    var initialDelay = 3000;    // Wartezeit bis zum ersten Scrollen (ms)
+    var scrollDuration = 20000; // Zeit für den kompletten Weg von oben nach unten (ms) → 20 Sek.
+    var pauseAtBottom = 5000;   // Wartezeit unten, bevor es zurück nach oben geht (ms)
+    var pauseAtTop = 5000;      // Wartezeit oben, bevor der Zyklus neu beginnt (ms)
 
-    function tick() {
+    function setCrop(px) {
+      document.documentElement.style.setProperty("--crop-top", px + "px");
+    }
+
+    function animate(from, to, duration, onDone) {
+      var startTime = null;
+      function step(timestamp) {
+        if (!startTime) startTime = timestamp;
+        var elapsed = timestamp - startTime;
+        var progress = Math.min(elapsed / duration, 1);
+        setCrop(from + (to - from) * progress);
+        if (progress < 1) {
+          requestAnimationFrame(step);
+        } else {
+          onDone();
+        }
+      }
+      requestAnimationFrame(step);
+    }
+
+    function cycle() {
       var shifter = document.getElementById("shifter");
       var maxCrop = shifter.scrollHeight - window.innerHeight;
       if (maxCrop < 0) { maxCrop = 0; }
 
-      if (current >= maxCrop) {
-        // Wir waren bereits ganz unten -> zurück zum Anfang
-        current = 0;
-        document.documentElement.style.setProperty("--crop-top", current + "px");
-        setTimeout(tick, topPause);
-        return;
-      }
-
-      current += step;
-      if (current > maxCrop) {
-        current = maxCrop; // exakt auf den Boden "einrasten", statt zu überspringen
-      }
-
-      document.documentElement.style.setProperty("--crop-top", current + "px");
-      setTimeout(tick, stepPause);
+      animate(0, maxCrop, scrollDuration, function () {
+        setTimeout(function () {
+          setCrop(0);
+          setTimeout(cycle, pauseAtTop);
+        }, pauseAtBottom);
+      });
     }
 
-    setTimeout(tick, initialDelay);
+    setTimeout(cycle, initialDelay);
   })();
 </script>
 </body>
