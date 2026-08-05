@@ -63,11 +63,13 @@
 
   (function () {
     // ==== EINSTELLBARE WERTE FÜR DEN SCROLL-TICKER ====
-    var initialDelay   = 3000;  // EINSTELLBAR: Wartezeit (ms) bis zum ERSTEN Scrollen nach dem Laden der Seite
-    var scrollDuration  = 15000; // EINSTELLBAR: Dauer (ms) für den kompletten Weg von ganz oben bis ganz unten
-    var pauseAtBottom   = 2000;  // EINSTELLBAR: Wartezeit (ms) unten, bevor es zurück nach oben springt
-    var pauseAtTop      = 3000;  // EINSTELLBAR: Wartezeit (ms) oben, bevor der nächste Durchlauf startet
+    var initialDelay   = 4000;  // EINSTELLBAR: Wartezeit (ms) bis zum ERSTEN Scrollen nach dem Laden der Seite
+    var scrollDuration = 15000; // EINSTELLBAR: Dauer (ms) für den kompletten Weg von ganz oben bis ganz unten
+    var pauseAtBottom  = 2000;  // EINSTELLBAR: Wartezeit (ms) unten, bevor es zurück nach oben springt
+    var pauseAtTop     = 3000;  // EINSTELLBAR: Wartezeit (ms) oben, bevor der nächste Durchlauf startet
     // ===================================================
+
+    var generation = 0; // wird bei jedem Neustart erhöht, um alte Animationsschleifen zu stoppen
 
     function setCrop(px) {
       document.documentElement.style.setProperty("--crop-top", px + "px");
@@ -79,9 +81,10 @@
       return maxCrop < 0 ? 0 : maxCrop;
     }
 
-    function animate(duration, onDone) {
+    function animate(myGen, duration, onDone) {
       var startTime = null;
       function step(timestamp) {
+        if (myGen !== generation) { return; } // Abbruch, falls inzwischen neu gestartet wurde
         if (!startTime) startTime = timestamp;
         var elapsed = timestamp - startTime;
         var progress = Math.min(elapsed / duration, 1);
@@ -95,16 +98,35 @@
       requestAnimationFrame(step);
     }
 
-    function cycle() {
-      animate(scrollDuration, function () {
+    function cycle(myGen) {
+      if (myGen !== generation) { return; }
+      animate(myGen, scrollDuration, function () {
+        if (myGen !== generation) { return; }
         setTimeout(function () {
+          if (myGen !== generation) { return; }
           setCrop(0);
-          setTimeout(cycle, pauseAtTop);
+          setTimeout(function () { cycle(myGen); }, pauseAtTop);
         }, pauseAtBottom);
       });
     }
 
-    setTimeout(cycle, initialDelay);
+    function startFresh() {
+      generation++; // macht jede evtl. noch laufende alte Animation ungültig
+      var myGen = generation;
+      forceTop();
+      setCrop(0);
+      setTimeout(function () { cycle(myGen); }, initialDelay);
+    }
+
+    // Beim ersten Laden der Seite starten
+    startFresh();
+
+    // Immer neu von oben starten, wenn die Seite (wieder) sichtbar wird
+    document.addEventListener("visibilitychange", function () {
+      if (document.visibilityState === "visible") {
+        startFresh();
+      }
+    });
   })();
 </script>
 </body>
