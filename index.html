@@ -2,11 +2,8 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8">
-  <title>TSV Großenkneten - Vereinsspiele</title>
-  <script
-    type="text/javascript"
-    src="https://www.fussball.de/widgets.js">
-  </script>
+  <title>TSV Großenkneten - 1.Herren</title>
+  <script type="text/javascript" src="https://www.fussball.de/widgets.js"></script>
   <style>
     html, body {
       margin: 0;
@@ -14,36 +11,28 @@
       background: #ffffff;
       width: 100%;
       height: 100%;
+      overflow: hidden;
     }
-
-    /*
-      ANPASSUNGSWERTE:
-      --crop-top    = Pixel, die oben abgeschnitten werden
-      --crop-height = Pixel, die danach noch sichtbar bleiben (Höhe)
-      --crop-left   = Pixel, die links abgeschnitten werden
-      --crop-right  = Pixel, die rechts abgeschnitten werden
-    */
+    html, body, #viewport, #shifter {
+      overflow-anchor: none;
+    }
     :root {
       --crop-top: 0px;
-      --crop-height: 1700px;
-      --crop-left: 0px;
-      --crop-right: 0px;
-      --zoom: 1.3; /* 1.0 = normale Größe, 1.3 = 30% größer, 1.5 = 50% größer usw. */
-
+      --zoom: 1.3; /* 1.0 = normale Größe, 1.3 = 30% größer usw. */
+    }
     #viewport {
       width: 100vw;
-      height: var(--crop-height);
+      height: 100vh;
       overflow: hidden;
       position: relative;
     }
-
     #shifter {
       position: absolute;
       top: calc(-1 * var(--crop-top));
-      left: calc(-1 * var(--crop-left));
-      width: calc(100% + var(--crop-left) + var(--crop-right));
+      left: 0;
+      width: 100%;
+      transition: top 1s ease-in-out;
     }
-
     .fussballde_widget {
       width: 100% !important;
       zoom: var(--zoom);
@@ -61,5 +50,42 @@
       ></div>
     </div>
   </div>
+
+<script>
+  if ("scrollRestoration" in history) {
+    history.scrollRestoration = "manual";
+  }
+  function forceTop() {
+    window.scrollTo(0, 0);
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+  }
+  window.addEventListener("scroll", forceTop, true);
+  forceTop();
+
+  (function () {
+    var initialDelay = 3000; // Wartezeit bis zum ERSTEN Scrollen (ms) → 3 Sekunden
+    var step = 250;          // Pixel pro Schritt
+    var stepPause = 4000;    // Wartezeit zwischen den weiteren Schritten (ms)
+    var topPause = 8000;     // Wartezeit oben, bevor der Zyklus neu startet (ms)
+    var current = 0;
+
+    function tick() {
+      var shifter = document.getElementById("shifter");
+      var maxCrop = shifter.scrollHeight - window.innerHeight;
+      if (maxCrop < 0) { maxCrop = 0; }
+
+      current += step;
+      if (current >= maxCrop) {
+        current = 0;
+      }
+
+      document.documentElement.style.setProperty("--crop-top", current + "px");
+      setTimeout(tick, current === 0 ? topPause : stepPause);
+    }
+
+    setTimeout(tick, initialDelay);
+  })();
+</script>
 </body>
 </html>
