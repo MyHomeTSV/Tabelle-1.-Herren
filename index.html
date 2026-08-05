@@ -66,9 +66,9 @@
 
   (function () {
     var initialDelay = 3000;    // Wartezeit bis zum ersten Scrollen (ms)
-    var scrollDuration = 20000; // Zeit für den kompletten Weg von oben nach unten (ms) → 20 Sek.
-    var pauseAtBottom = 5000;   // Wartezeit unten, bevor es zurück nach oben geht (ms)
-    var pauseAtTop = 5000;      // Wartezeit oben, bevor der Zyklus neu beginnt (ms)
+    var scrollDuration = 15000; // Zeit für den kompletten Weg von oben nach unten (ms) → 20 Sek.
+    var pauseAtBottom = 2000;   // Wartezeit unten, bevor es zurück nach oben geht (ms)
+    var pauseAtTop = 3000;      // Wartezeit oben, bevor der Zyklus neu beginnt (ms)
 
     function setCrop(px) {
       document.documentElement.style.setProperty("--crop-top", px + "px");
