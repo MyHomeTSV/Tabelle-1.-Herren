@@ -64,10 +64,10 @@
   forceTop();
 
   (function () {
-    var initialDelay = 3000; // Wartezeit bis zum ERSTEN Scrollen (ms) → 3 Sekunden
-    var step = 500;          // Pixel pro Schritt
-    var stepPause = 4000;    // Wartezeit zwischen den weiteren Schritten (ms)
-    var topPause = 6000;     // Wartezeit oben, bevor der Zyklus neu startet (ms)
+    var initialDelay = 3000;
+    var step = 500;
+    var stepPause = 4000;
+    var topPause = 6000;
     var current = 0;
 
     function tick() {
@@ -75,13 +75,21 @@
       var maxCrop = shifter.scrollHeight - window.innerHeight;
       if (maxCrop < 0) { maxCrop = 0; }
 
-      current += step;
       if (current >= maxCrop) {
+        // Wir waren bereits ganz unten -> zurück zum Anfang
         current = 0;
+        document.documentElement.style.setProperty("--crop-top", current + "px");
+        setTimeout(tick, topPause);
+        return;
+      }
+
+      current += step;
+      if (current > maxCrop) {
+        current = maxCrop; // exakt auf den Boden "einrasten", statt zu überspringen
       }
 
       document.documentElement.style.setProperty("--crop-top", current + "px");
-      setTimeout(tick, current === 0 ? topPause : stepPause);
+      setTimeout(tick, stepPause);
     }
 
     setTimeout(tick, initialDelay);
